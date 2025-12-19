@@ -1,0 +1,92 @@
+# ============================================================
+# Network Configuration Template
+# ============================================================
+# INSTRUCTIONS:
+# 1. Copy this file to 'network-config' (without .sample extension)
+# 2. Configure your Wi-Fi settings in the 'wifis' section
+# 3. Ethernet (wired) configuration is auto-detected - no changes needed
+# ============================================================
+# NOTE: This file is primarily used for USB installations.
+#       Virtual machines use the network config in user-data file.
+# ============================================================
+
+version: 2
+
+# ============================================================
+# Ethernet (Wired Network) Configuration
+# ============================================================
+# This section handles wired network connections.
+# The configuration below auto-detects eth0 interface.
+# In most cases, no modification is needed.
+ethernets:
+  eth0:
+    dhcp4: true                    # Use DHCP for automatic IP
+    optional: true                 # Don't wait for this interface during boot
+
+# ============================================================
+# Wi-Fi (Wireless Network) Configuration
+# ============================================================
+# Uncomment and configure the section below for Wi-Fi installation.
+# This is essential for USB installations without wired connection.
+
+wifis:
+  wlan0:                           # Wi-Fi interface name (usually wlan0)
+    dhcp4: true                    # Use DHCP for automatic IP
+    access-points:
+      "YOUR_WIFI_SSID_HERE":       # CHANGE THIS: Your Wi-Fi network name
+        password: "YOUR_WIFI_PASSWORD_HERE"  # CHANGE THIS: Your Wi-Fi password
+
+# ============================================================
+# Multiple Wi-Fi Networks Example
+# ============================================================
+# You can configure multiple Wi-Fi networks for fallback:
+#
+# wifis:
+#   wlan0:
+#     dhcp4: true
+#     access-points:
+#       "Home_WiFi_5G":
+#         password: "home_password_123"
+#       "Home_WiFi_2.4G":
+#         password: "home_password_123"
+#       "Office_WiFi":
+#         password: "office_password_456"
+
+# ============================================================
+# Static IP Configuration Example
+# ============================================================
+# For static IP instead of DHCP:
+#
+# ethernets:
+#   eth0:
+#     dhcp4: false
+#     addresses:
+#       - 192.168.1.100/24
+#     gateway4: 192.168.1.1
+#     nameservers:
+#       addresses:
+#         - 8.8.8.8
+#         - 8.8.4.4
+
+# ============================================================
+# Important Notes
+# ============================================================
+# 1. YAML syntax is strict:
+#    - Use 2 spaces for indentation (NO TABS)
+#    - Space required after colons
+#    - Quote strings with special characters
+#
+# 2. Wi-Fi passwords:
+#    - Always use quotes around passwords
+#    - Special characters may need escaping
+#
+# 3. Interface names:
+#    - Common wired: eth0, ens33, enp3s0, eno1
+#    - Common wireless: wlan0, wlp2s0
+#    - Use 'ip link' command to check your interface names
+#
+# 4. Testing:
+#    - Always test in VM first before USB installation
+#    - VM testing uses network config from user-data file
+#    - USB installation uses this network-config file
+# ============================================================

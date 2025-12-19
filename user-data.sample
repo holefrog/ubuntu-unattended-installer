@@ -1,0 +1,140 @@
+#cloud-config
+# ============================================================
+# Ubuntu 24.04 Autoinstall Configuration Template
+# ============================================================
+# INSTRUCTIONS:
+# 1. Copy this file to 'user-data' (without .sample extension)
+# 2. Replace all placeholder values marked with YOUR_*
+# 3. Generate encrypted password: mkpasswd -m sha-512 your_password
+# ============================================================
+
+autoinstall:
+  version: 1
+  interactive-sections: []
+
+  # ============================================================
+  # Localization Settings
+  # ============================================================
+  locale: en_US.UTF-8              # Language (e.g., zh_CN.UTF-8, ja_JP.UTF-8)
+  timezone: America/Vancouver      # Timezone (e.g., Asia/Shanghai, Europe/London)
+
+  keyboard:
+    layout: us                     # Keyboard layout (e.g., us, gb, jp, cn)
+
+  # ============================================================
+  # Installation Source
+  # ============================================================
+  source:
+    id: ubuntu-desktop-minimal     # Options: ubuntu-desktop-minimal, ubuntu-desktop
+    search_drivers: false
+
+  # ============================================================
+  # Network Configuration
+  # ============================================================
+  # This configuration automatically matches any Ethernet interface
+  # starting with 'e' (e.g., eth0, ens33, enp3s0, eno1)
+  # For Wi-Fi configuration, edit network-config file
+  network:
+    version: 2
+    ethernets:
+      any-ethernet:
+        match:
+          name: "e*"               # Matches any interface starting with 'e'
+        dhcp4: true
+        optional: true
+
+  # ============================================================
+  # User Account Configuration
+  # ============================================================
+  identity:
+    hostname: YOUR_HOSTNAME        # CHANGE THIS: Set your computer name
+    username: YOUR_USERNAME        # CHANGE THIS: Set your username
+    realname: YOUR_FULL_NAME       # CHANGE THIS: Set your full name
+    # Generate password with: mkpasswd -m sha-512 your_password
+    # Example below is for password "123456" (DO NOT USE THIS!)
+    password: "YOUR_ENCRYPTED_PASSWORD_HERE"
+
+  # ============================================================
+  # SSH Configuration (Desktop typically doesn't need SSH)
+  # ============================================================
+  ssh:
+    install-server: false          # Set to true if you need SSH access
+    allow-pw: false                # Set to true to allow password login via SSH
+
+  # ============================================================
+  # Disk Configuration
+  # ============================================================
+  storage:
+    layout:
+      name: lvm                    # LVM partitioning scheme
+      match:
+        size: largest              # Automatically selects the largest disk
+
+  # ============================================================
+  # Additional Packages
+  # ============================================================
+  # Add any packages you want installed during setup
+  packages:
+    - git
+    - curl
+    # - vim
+    # - htop
+    # - build-essential
+    # - python3-pip
+
+  # ============================================================
+  # Post-Installation Commands
+  # ============================================================
+  # These commands run after installation completes
+  late-commands:
+    - |
+      # Get the installed username dynamically
+      TARGET_USER=$(chroot /target getent passwd 1000 | cut -d: -f1)
+      echo "Detected installation user: $TARGET_USER"
+
+      # ========================================
+      # 1. Remove Snap Package Manager
+      # ========================================
+      curtin in-target --target=/target -- systemctl stop snapd.service snapd.socket
+      curtin in-target --target=/target -- systemctl disable snapd.service snapd.socket
+      curtin in-target --target=/target -- apt purge -y snapd
+      curtin in-target --target=/target -- apt-mark hold snapd
+      curtin in-target --target=/target -- rm -rf /snap /var/snap /var/lib/snapd
+
+      # ========================================
+      # 2. Configure Passwordless Sudo
+      # ========================================
+      echo "$TARGET_USER ALL=(ALL) NOPASSWD:ALL" > "/target/etc/sudoers.d/$TARGET_USER"
+      chmod 440 "/target/etc/sudoers.d/$TARGET_USER"
+
+      # ========================================
+      # 3. Create User Directories
+      # ========================================
+      mkdir -p "/target/home/$TARGET_USER/Programs"
+      mkdir -p "/target/home/$TARGET_USER/Downloads"
+      mkdir -p "/target/home/$TARGET_USER/Temp"
+      
+      chown -R 1000:1000 "/target/home/$TARGET_USER/Programs"
+      chown -R 1000:1000 "/target/home/$TARGET_USER/Downloads"
+      chown -R 1000:1000 "/target/home/$TARGET_USER/Temp"
+
+      # ========================================
+      # 4. Configure Bash Aliases
+      # ========================================
+      cat >> "/target/home/$TARGET_USER/.bashrc" <<'EOF'
+
+      # ========================================
+      # Custom Aliases
+      # ========================================
+      alias ll='ls -alFX'          # Detailed list view
+      alias la='ls -AX'            # List all except . and ..
+      alias l='ls -CFX'            # Compact list
+      alias ..='cd ..'             # Go up one directory
+      alias ...='cd ../..'         # Go up two directories
+      alias uu='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'  # System update
+      EOF
+
+  # ============================================================
+  # Final Action
+  # ============================================================
+  shutdown: reboot                 # Options: reboot, poweroff

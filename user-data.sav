@@ -1,0 +1,62 @@
+#cloud-config
+# ============================================================
+# 最小化配置 - 避免安装过程卡住
+# ============================================================
+
+autoinstall:
+  version: 1
+  interactive-sections: []
+  
+  # 基本设置
+  locale: en_US.UTF-8
+  timezone: America/Vancouver
+  keyboard:
+    layout: us
+  
+  # 网络（自动 DHCP）
+  network:
+    version: 2
+    ethernets:
+      any-ethernet:
+        match:
+          name: "e*"
+        dhcp4: true
+        optional: true
+        
+    wifis:
+      wlp3s0:
+        dhcp4: true
+        access-points:
+          "5300_5G-1":
+            password: "David@Home"
+  
+  # 用户配置
+  identity:
+    hostname: Home-X230
+    username: david
+    # 密码: 123456 (请修改！)
+    # 生成: mkpasswd -m sha-512 your_password
+    password: "$6$o9ag6ueK5VUXqTTs$m7LB/2zGxbgneKxlSAZlUHHBP3quUGSH06F.bcG9ULdlc3tcXyLZqAtSzfsdzLJYYJ9eyF5UC3HR3c1k2WZmg0"
+  
+  # SSH
+  ssh:
+    install-server: false
+    allow-pw: false
+  
+  # 磁盘
+  storage:
+    layout:
+      name: lvm
+      match:
+        size: largest
+
+  # 不安装额外软件包
+  packages: 
+    - network-manager
+  
+  # 最小化后期命令
+  late-commands:
+    - echo "Installation complete" > /target/root/install.log
+  
+  # 完成后重启
+  shutdown: reboot
